@@ -1,10 +1,9 @@
 <?php
 // 修改此处，比较简单就没有单独提取config
-$siteTitle = "51015.cn/d短网址";
-$siteUrl = "https://51015.cn/d";
+$siteTitle = "51015.cn/dd短网址";
+$siteUrl = "https://51015.cn/dd";
 $file = 'urls.php';               // 本地存放 URLS 的文件
 $use_rewrite = 1;                 // 是否使用伪静态
-$maxnum = 1000;                   //1000个之后，重0开始，保存备份需要整个文件夹给予777权限
 // 以下内容根据需要修改
 error_reporting(E_ALL ^ E_NOTICE);//显示除去 E_NOTICE 之外的所有错误信息
 ob_start();   //开启ob缓存
@@ -52,28 +51,24 @@ if(file_get_contents('urls.php')){
 //生成
 if($action == 'create'){
     if(isset($_POST['create'])){
+        $id = createId(5);    //随机生成5位小数字母+数字
 		$url = trim($_POST['url']);
 		if($url == ''){
 			$output = '<strong>没有输入URL地址</strong>';
 		}else{
 			if(@preg_match($regex, $url)){
-                //保存的网址数量超过1000条，则备份后清空
-                if(count($arr) >= $maxnum){
-                    file_put_contents(date('Ymd').'urls.txt', var_export($arr,true));
-                    file_put_contents('urls.php', '');
-                }
                 //重复网址则返回键值
                 $find = array_search($url,$arr);
                 if($find !== false){
                     $id = $find;
                 }else{
+                    $id = checkId($arr,$id);
                     //原来没有新插入
-                    $arr[] = $url;
+                    $arr[$id] = $url;
                     //var_dump($arr);
 
                     $a = '<?php'.PHP_EOL.'return '.var_export($arr,true).';';
                     file_put_contents('urls.php', $a);
-                    $id = count($arr)-1;
                 }
 
                 //{$id}前面加入了一个/
@@ -133,4 +128,28 @@ if($action == 'redirect'){
 
 <?php
 ob_end_flush();
+
+//生成大小写字母和数字随机字符串
+function createId($len){
+    //大小写字母和数字混用
+    //$str = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    //小写字母和数字混用
+    $str = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    $key = '';
+    for($i = 0;$i < $len;$i++){
+        $key .= $str{mt_rand(0,strlen($str)-1)};
+    }
+    return $key;
+}
+
+//查看随机生成的id 是否已经被占用,占用重新生成，递归
+    function checkId($arr,$id){
+        if(!isset($arr[$id])){
+            return $id;
+        }else{
+            $id = createId(5);
+            return checkId($arr,$id);
+        }
+    }
+
 ?>
